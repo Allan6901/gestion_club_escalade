@@ -1,10 +1,10 @@
 package myapp.repo;
 
-import myapp.model.Categorie;
+import myapp.model.Member;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface CategorieRepository extends JpaRepository<Categorie, Long> {
+public interface MemberRepository extends JpaRepository<Member, Long> {
 
 }

@@ -7,21 +7,21 @@ import java.sql.Date;
 
 @Entity
 @Data
-public class Sortie {
+public class Trip {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String nom;
+    private String name;
     private String description;
-    private String siteWeb;
+    private String website;
     private Date date;
 
     @ManyToOne
-    private Membre createur;
+    private Member creator;
 
     @ManyToOne
-    private Categorie categorie;
+    private Category category;
 
 }

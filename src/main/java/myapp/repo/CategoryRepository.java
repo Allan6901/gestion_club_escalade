@@ -1,10 +1,10 @@
 package myapp.repo;
 
-import myapp.model.Sortie;
+import myapp.model.Category;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface SortieRepository extends JpaRepository<Sortie, Long> {
+public interface CategoryRepository extends JpaRepository<Category, Long> {
 
 }

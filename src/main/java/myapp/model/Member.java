@@ -7,18 +7,18 @@ import java.util.List;
 
 @Entity
 @Data
-public class Membre {
+public class Member {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String nom;
-    private String prenom;
+    private String lastName;
+    private String firstName;
     private String email;
-    private String motDePasse;
+    private String password;
 
-    @OneToMany(mappedBy = "createur")
-    private List<Sortie> sorties;
+    @OneToMany(mappedBy = "creator")
+    private List<Trip> trips;
 
 }
