@@ -1,0 +1,4 @@
+myapp\repo\MemberRepositoryTest.class
+myapp\repo\TripRepositoryTest.class
+myapp\repo\CategoryRepositoryTest.class
+myapp\web\MemberControllerTest.class
