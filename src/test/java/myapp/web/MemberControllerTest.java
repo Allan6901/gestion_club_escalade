@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Arrays;
@@ -25,6 +26,7 @@ public class MemberControllerTest {
     private MemberRepository memberRepository;
 
     @Test
+    @WithMockUser
     public void testListMembers() throws Exception {
         Member member = new Member();
         member.setLastName("Doe");
@@ -40,6 +42,7 @@ public class MemberControllerTest {
     }
 
     @Test
+    @WithMockUser
     public void testAddMember() throws Exception {
         mockMvc.perform(post("/members")
                 .param("lastName", "Doe")

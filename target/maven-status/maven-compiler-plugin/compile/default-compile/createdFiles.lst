@@ -1,0 +1,7 @@
+myapp\repo\CategoryRepository.class
+myapp\repo\TripRepository.class
+myapp\web\MemberController.class
+myapp\model\Member.class
+myapp\model\Category.class
+myapp\model\Trip.class
+myapp\repo\MemberRepository.class
