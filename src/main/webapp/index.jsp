@@ -12,5 +12,5 @@
 
     <p>Aujourd'hui : ${now}</p>
     <p>Hello  1 + 2 = <%= (1+2) %></p>
-    <p><a href="/users">Voir les utilisateurs</a></p>
+    <p><a href="/membres">Voir les membres</a></p>
 </body></html>
