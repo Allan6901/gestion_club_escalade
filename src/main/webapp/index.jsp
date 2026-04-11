@@ -10,6 +10,7 @@
 <html><body>
     <jsp:useBean id="now" class="java.util.Date" />
 
-    <p>Aujourdhui : ${now}</p>
-   <p>Hello  1 + 2 = <%= (1+2) %></p>
+    <p>Aujourd'hui : ${now}</p>
+    <p>Hello  1 + 2 = <%= (1+2) %></p>
+    <p><a href="/users">Voir les utilisateurs</a></p>
 </body></html>
