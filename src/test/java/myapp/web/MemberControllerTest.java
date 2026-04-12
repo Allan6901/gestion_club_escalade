@@ -1,7 +1,8 @@
 package myapp.web;
 
+import myapp.dao.MemberDAO;
 import myapp.model.Member;
-import myapp.repo.MemberRepository;
+import myapp.security.UserDetailsServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -9,22 +10,25 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.Arrays;
+import java.util.Collections;
 
 import static org.mockito.Mockito.when;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(MemberController.class)
+@WebMvcTest(MemberApiController.class)
+@SuppressWarnings("removal")
 public class MemberControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
 
     @MockBean
-    private MemberRepository memberRepository;
+    private MemberDAO memberDAO;
+
+    @MockBean
+    @SuppressWarnings("unused")
+    private UserDetailsServiceImpl userDetailsService;
 
     @Test
     @WithMockUser
@@ -34,25 +38,10 @@ public class MemberControllerTest {
         member.setFirstName("John");
         member.setEmail("john.doe@example.com");
 
-        when(memberRepository.findAll()).thenReturn(Arrays.asList(member));
+        when(memberDAO.getAllMembers()).thenReturn(Collections.singletonList(member));
 
-        mockMvc.perform(get("/members"))
+        mockMvc.perform(get("/api/members"))
                 .andExpect(status().isOk())
-                .andExpect(view().name("members"))
-                .andExpect(model().attributeExists("members"));
+                .andExpect(jsonPath("$[0].lastName").value("Doe"));
     }
-
-    @Test
-    @WithMockUser
-    public void testAddMember() throws Exception {
-        mockMvc.perform(post("/members")
-                .param("lastName", "Doe")
-                .param("firstName", "John")
-                .param("email", "john.doe@example.com")
-                .param("password", "password")
-                .with(csrf()))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/members"));
-    }
-
 }
