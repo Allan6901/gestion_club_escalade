@@ -18,6 +18,9 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -249,6 +252,113 @@ public class TripDAOTest {
         entityManager.persistAndFlush(testTrip);
         long count = tripDAO.count();
         assertTrue(count >= 1);
+    }
+
+    // ========== Tests PAGEABLE ==========
+
+    @Test
+    public void testGetTripsByCategoryPageable() {
+        entityManager.persistAndFlush(testTrip);
+
+        Trip trip2 = new Trip();
+        trip2.setName("Sortie 2");
+        trip2.setCreator(testMember);
+        trip2.setCategory(testCategory);
+        trip2.setDate(Date.valueOf(LocalDate.now()));
+        entityManager.persistAndFlush(trip2);
+
+        Page<Trip> page = tripDAO.getTripsByCategoryPageable(testCategory.getId(), PageRequest.of(0, 10));
+        assertNotNull(page);
+        assertTrue(page.getTotalElements() >= 2);
+        assertTrue(page.getContent().stream().allMatch(t -> t.getCategory().getId().equals(testCategory.getId())));
+    }
+
+    @Test
+    public void testGetTripsByCategoryPageableFirstPage() {
+        for (int i = 0; i < 5; i++) {
+            Trip t = new Trip();
+            t.setName("Sortie " + i);
+            t.setCreator(testMember);
+            t.setCategory(testCategory);
+            t.setDate(Date.valueOf(LocalDate.now().plusDays(i)));
+            entityManager.persistAndFlush(t);
+        }
+
+        Page<Trip> page = tripDAO.getTripsByCategoryPageable(testCategory.getId(), PageRequest.of(0, 3));
+        assertEquals(3, page.getContent().size());
+        assertEquals(5, page.getTotalElements());
+        assertEquals(2, page.getTotalPages());
+    }
+
+    @Test
+    public void testSearchTripsPageable() {
+        testTrip.setName("Escalade à Fontainebleau");
+        entityManager.persistAndFlush(testTrip);
+
+        Page<Trip> page = tripDAO.searchTripsPageable("Fontainebleau", null, null, PageRequest.of(0, 10));
+        assertNotNull(page);
+        assertFalse(page.getContent().isEmpty());
+        assertTrue(page.getContent().get(0).getName().contains("Fontainebleau"));
+    }
+
+    @Test
+    public void testSearchTripsPageableByCategory() {
+        entityManager.persistAndFlush(testTrip);
+
+        Page<Trip> page = tripDAO.searchTripsPageable(null, testCategory.getId(), null, PageRequest.of(0, 10));
+        assertNotNull(page);
+        assertFalse(page.getContent().isEmpty());
+    }
+
+    @Test
+    public void testSearchTripsPageableByCreator() {
+        entityManager.persistAndFlush(testTrip);
+
+        Page<Trip> page = tripDAO.searchTripsPageable(null, null, testMember.getId(), PageRequest.of(0, 10));
+        assertNotNull(page);
+        assertFalse(page.getContent().isEmpty());
+        assertTrue(page.getContent().get(0).getCreator().getId().equals(testMember.getId()));
+    }
+
+    @Test
+    public void testSearchTripsPageableNoMatch() {
+        entityManager.persistAndFlush(testTrip);
+
+        Page<Trip> page = tripDAO.searchTripsPageable("xxxxNonExistant", null, null, PageRequest.of(0, 10));
+        assertNotNull(page);
+        assertTrue(page.getContent().isEmpty());
+    }
+
+    @Test
+    public void testGetTripsByCreatorPageable() {
+        entityManager.persistAndFlush(testTrip);
+
+        Trip trip2 = new Trip();
+        trip2.setName("Sortie 2 par même créateur");
+        trip2.setCreator(testMember);
+        trip2.setCategory(testCategory);
+        trip2.setDate(Date.valueOf(LocalDate.now().plusDays(1)));
+        entityManager.persistAndFlush(trip2);
+
+        Page<Trip> page = tripDAO.getTripsByCreatorPageable(testMember.getId(), PageRequest.of(0, 10));
+        assertNotNull(page);
+        assertTrue(page.getTotalElements() >= 2);
+        assertTrue(page.getContent().stream().allMatch(t -> t.getCreator().getId().equals(testMember.getId())));
+    }
+
+    @Test
+    public void testGetTripsByCreatorPageableEmpty() {
+        // Membre sans sortie
+        Member otherMember = new Member();
+        otherMember.setLastName("Autre");
+        otherMember.setFirstName("Membre");
+        otherMember.setEmail("autre@example.com");
+        otherMember.setPassword("pass");
+        otherMember = entityManager.persistAndFlush(otherMember);
+
+        Page<Trip> page = tripDAO.getTripsByCreatorPageable(otherMember.getId(), PageRequest.of(0, 10));
+        assertNotNull(page);
+        assertTrue(page.getContent().isEmpty());
     }
 }
 

@@ -124,6 +124,10 @@ public class CategoryDAOTest {
         trip.setCreator(member);
         entityManager.persistAndFlush(trip);
 
+        // Vider le cache L1 pour forcer le rechargement depuis la BDD (JOIN FETCH)
+        entityManager.flush();
+        entityManager.clear();
+
         Optional<Category> found = categoryDAO.getCategoryWithTrips(saved.getId());
         assertTrue(found.isPresent());
         assertEquals(1, found.get().getTrips().size());

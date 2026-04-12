@@ -9,8 +9,10 @@ import myapp.repo.TripRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Date;
 import java.util.ArrayList;
@@ -22,6 +24,9 @@ public class DataInitializer implements CommandLineRunner {
 
     private static final Logger logger = LoggerFactory.getLogger(DataInitializer.class);
 
+    @Value("${app.data.init.enabled:true}")
+    private boolean dataInitEnabled;
+
     @Autowired
     private CategoryRepository categoryRepository;
 
@@ -32,8 +37,9 @@ public class DataInitializer implements CommandLineRunner {
     private TripRepository tripRepository;
 
     @Override
+    @Transactional
     public void run(String... args) throws Exception {
-        if (categoryRepository.count() == 0) {
+        if (dataInitEnabled && categoryRepository.count() == 0) {
             initializeData();
         }
     }
