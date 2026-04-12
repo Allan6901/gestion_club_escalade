@@ -1,6 +1,6 @@
-
 package myapp.config;
 
+import jakarta.servlet.DispatcherType;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -15,9 +15,20 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .authorizeHttpRequests(authz -> authz
-                .anyRequest().permitAll()
+                .dispatcherTypeMatchers(DispatcherType.FORWARD, DispatcherType.ERROR).permitAll()
+                .requestMatchers("/", "/categories", "/categories/**", "/trips", "/trips/search", "/css/**", "/webjars/**", "/forgot-password", "/reset-password").permitAll()
+                .anyRequest().authenticated()
             )
-            .csrf(csrf -> csrf.disable()); // Disable CSRF for simplicity in demo
+            .formLogin(form -> form
+                .loginPage("/login")
+                .defaultSuccessUrl("/", true)
+                .permitAll()
+            )
+            .logout(logout -> logout
+                .logoutSuccessUrl("/")
+                .permitAll()
+            )
+            .csrf(csrf -> csrf.disable());
 
         return http.build();
     }

@@ -1,0 +1,33 @@
+package myapp.security;
+
+import myapp.dao.MemberDAO;
+import myapp.model.Member;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.stereotype.Service;
+
+import java.util.Optional;
+
+@Service
+public class UserDetailsServiceImpl implements UserDetailsService {
+
+    @Autowired
+    private MemberDAO memberDAO;
+
+    @Override
+    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+        Optional<Member> memberOpt = memberDAO.getMemberByEmail(email);
+        if (memberOpt.isEmpty()) {
+            throw new UsernameNotFoundException("Utilisateur non trouvé avec l'email : " + email);
+        }
+
+        Member member = memberOpt.get();
+        return User.withUsername(member.getEmail())
+                .password("{noop}" + member.getPassword()) // {noop} car les mots de passe ne sont pas encodés pour le moment (démo)
+                .roles("USER")
+                .build();
+    }
+}

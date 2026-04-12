@@ -53,7 +53,15 @@ public class DataInitializer implements CommandLineRunner {
         }
         logger.info("Categories created: {}", categoryRepository.count());
 
-        // Create members
+        // Create a known member for testing
+        Member admin = new Member();
+        admin.setLastName("Admin");
+        admin.setFirstName("Super");
+        admin.setEmail("admin@test.com");
+        admin.setPassword("admin"); // Mot de passe non encodé
+        memberRepository.save(admin);
+
+        // Create other random members
         List<Category> categories = categoryRepository.findAll();
         Random random = new Random();
 
