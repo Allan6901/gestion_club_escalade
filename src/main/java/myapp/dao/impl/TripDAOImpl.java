@@ -6,6 +6,8 @@ import myapp.model.Trip;
 import myapp.repo.MemberRepository;
 import myapp.repo.TripRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -152,6 +154,26 @@ public class TripDAOImpl implements TripDAO {
         return tripRepository.findById(tripId)
             .map(trip -> trip.getParticipants().stream().anyMatch(m -> m.getId().equals(memberId)))
             .orElse(false);
+    }
+
+    @Override
+    public Page<Trip> getTripsByCategoryPageable(Long categoryId, Pageable pageable) {
+        return tripRepository.findByCategoryPageable(categoryId, pageable);
+    }
+
+    @Override
+    public Page<Trip> searchTripsPageable(String name, Long categoryId, Long memberId, Pageable pageable) {
+        return tripRepository.searchTripsPageable(
+            (name != null && !name.trim().isEmpty()) ? name : null,
+            (categoryId != null && categoryId > 0) ? categoryId : null,
+            (memberId != null && memberId > 0) ? memberId : null,
+            pageable
+        );
+    }
+
+    @Override
+    public Page<Trip> getTripsByCreatorPageable(Long memberId, Pageable pageable) {
+        return tripRepository.findByCreatorPageable(memberId, pageable);
     }
 }
 

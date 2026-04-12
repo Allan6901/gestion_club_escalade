@@ -19,13 +19,12 @@
                 <a href="/forgot-password" class="btn btn-link">Mot de passe oublié ?</a>
             </sec:authorize>
             <sec:authorize access="isAuthenticated()">
-                <p>Bienvenue, <sec:authentication property="name" />!</p>
+                <p>Bienvenue, <sec:authentication property="name" /> !</p>
                 <form action="/logout" method="post" class="d-inline">
                     <button type="submit" class="btn btn-danger">Se déconnecter</button>
                 </form>
-                <sec:authorize access="hasRole('ADMIN')">
-                    <a href="/member/trips/new" class="btn btn-success ms-2">Proposer une nouvelle sortie</a>
-                </sec:authorize>
+                <a href="/member/my-trips" class="btn btn-outline-primary ms-2">Mes sorties</a>
+                <a href="/member/trips/new" class="btn btn-success ms-2">Proposer une nouvelle sortie</a>
             </sec:authorize>
         </div>
 

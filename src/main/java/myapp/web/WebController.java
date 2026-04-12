@@ -7,6 +7,8 @@ import myapp.model.Category;
 import myapp.model.Member;
 import myapp.model.Trip;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.core.Authentication;
@@ -21,6 +23,8 @@ import java.util.UUID;
 
 @Controller
 public class WebController {
+
+    private static final int PAGE_SIZE = 20;
 
     @Autowired
     private CategoryDAO categoryDAO;
@@ -48,42 +52,53 @@ public class WebController {
     }
 
     @GetMapping("/categories/{id}/trips")
-    public String categoryTrips(@PathVariable Long id, Model model) {
+    public String categoryTrips(@PathVariable Long id,
+                                @RequestParam(defaultValue = "0") int page,
+                                Model model) {
         Optional<Category> category = categoryDAO.getCategoryById(id);
-        if (category.isPresent()) {
-            model.addAttribute("category", category.get());
-            model.addAttribute("trips", categoryDAO.getTripsByCategory(id));
-            return "category_trips";
-        }
-        return "redirect:/categories";
+        if (category.isEmpty()) return "redirect:/categories";
+
+        Page<Trip> tripPage = tripDAO.getTripsByCategoryPageable(id, PageRequest.of(page, PAGE_SIZE));
+        model.addAttribute("category", category.get());
+        model.addAttribute("trips", tripPage.getContent());
+        model.addAttribute("currentPage", tripPage.getNumber());
+        model.addAttribute("totalPages", tripPage.getTotalPages());
+        model.addAttribute("totalElements", tripPage.getTotalElements());
+        return "category_trips";
     }
 
     @GetMapping("/trips/{id}")
     public String tripDetail(@PathVariable Long id, Model model) {
-        Optional<Trip> trip = tripDAO.getTripById(id);
-        if (trip.isEmpty()) {
-            return "redirect:/categories";
-        }
+        Optional<Trip> tripOpt = tripDAO.getTripById(id);
+        if (tripOpt.isEmpty()) return "redirect:/categories";
 
-        model.addAttribute("trip", trip.get());
+        Trip trip = tripOpt.get();
+        model.addAttribute("trip", trip);
 
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         boolean isAuthenticated = auth != null && auth.isAuthenticated()
                 && !auth.getPrincipal().equals("anonymousUser");
-        boolean isAdmin = isAuthenticated && auth.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        boolean isAdmin = isAuthenticated && isAdmin(auth);
 
         model.addAttribute("isAuthenticated", isAuthenticated);
         model.addAttribute("isAdmin", isAdmin);
 
-        if (isAuthenticated && !isAdmin) {
-            memberDAO.getMemberByEmail(auth.getName()).ifPresent(member ->
-                model.addAttribute("isParticipant", tripDAO.isParticipant(id, member.getId()))
-            );
+        boolean isParticipant = false;
+        boolean canManage = isAdmin;
+
+        if (isAuthenticated) {
+            Optional<Member> memberOpt = memberDAO.getMemberByEmail(auth.getName());
+            if (memberOpt.isPresent()) {
+                Member member = memberOpt.get();
+                if (!isAdmin) {
+                    isParticipant = tripDAO.isParticipant(id, member.getId());
+                    // Le créateur peut gérer sa sortie
+                    canManage = trip.getCreator().getId().equals(member.getId());
+                }
+            }
         }
-        if (!model.containsAttribute("isParticipant")) {
-            model.addAttribute("isParticipant", false);
-        }
+        model.addAttribute("isParticipant", isParticipant);
+        model.addAttribute("canManage", canManage);
 
         return "trip_detail";
     }
@@ -91,15 +106,32 @@ public class WebController {
     @GetMapping("/trips/search")
     public String searchTrips(@RequestParam(required = false) String name,
                               @RequestParam(required = false) Long categoryId,
+                              @RequestParam(required = false) Long memberId,
+                              @RequestParam(defaultValue = "0") int page,
                               Model model) {
-        List<Trip> trips;
-        if ((name != null && !name.isEmpty()) || categoryId != null) {
-            trips = tripDAO.searchTrips(name, categoryId, null);
-        } else {
-            trips = tripDAO.getAllTrips();
-        }
-        model.addAttribute("trips", trips);
+        Page<Trip> tripPage = tripDAO.searchTripsPageable(
+                (name != null && !name.isBlank()) ? name : null,
+                categoryId,
+                memberId,
+                PageRequest.of(page, PAGE_SIZE)
+        );
+
+        model.addAttribute("trips", tripPage.getContent());
         model.addAttribute("categories", categoryDAO.getAllCategories());
+        model.addAttribute("currentPage", tripPage.getNumber());
+        model.addAttribute("totalPages", tripPage.getTotalPages());
+        model.addAttribute("totalElements", tripPage.getTotalElements());
+        model.addAttribute("searchName", name);
+        model.addAttribute("searchCategoryId", categoryId);
+        model.addAttribute("searchMemberId", memberId);
+
+        // Pour afficher "Sorties de Prénom Nom" quand filtré par créateur
+        if (memberId != null) {
+            memberDAO.getMemberById(memberId).ifPresent(m ->
+                model.addAttribute("creatorFilter", m.getFirstName() + " " + m.getLastName())
+            );
+        }
+
         return "search";
     }
 
@@ -155,8 +187,25 @@ public class WebController {
         return "redirect:/trips/" + id;
     }
 
-    // ======================== Gestion des sorties (ADMIN uniquement) ========================
+    // ======================== Gestion des sorties (tout membre authentifié) ========================
 
+    /** Page "Mes sorties" */
+    @GetMapping("/member/my-trips")
+    public String myTrips(@RequestParam(defaultValue = "0") int page, Model model) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        memberDAO.getMemberByEmail(auth.getName()).ifPresent(member -> {
+            Page<Trip> tripPage = tripDAO.getTripsByCreatorPageable(
+                    member.getId(), PageRequest.of(page, PAGE_SIZE));
+            model.addAttribute("trips", tripPage.getContent());
+            model.addAttribute("currentPage", tripPage.getNumber());
+            model.addAttribute("totalPages", tripPage.getTotalPages());
+            model.addAttribute("totalElements", tripPage.getTotalElements());
+            model.addAttribute("memberName", member.getFirstName() + " " + member.getLastName());
+        });
+        return "my_trips";
+    }
+
+    /** Formulaire de création */
     @GetMapping("/member/trips/new")
     public String newTripForm(Model model) {
         model.addAttribute("trip", new Trip());
@@ -164,37 +213,80 @@ public class WebController {
         return "trip_form";
     }
 
+    /** Créer ou modifier une sortie */
     @PostMapping("/member/trips")
     public String saveTrip(@ModelAttribute Trip trip, @RequestParam Long categoryId) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        Optional<Member> member = memberDAO.getMemberByEmail(auth.getName());
-        if (member.isPresent()) {
-            trip.setCreator(member.get());
-            categoryDAO.getCategoryById(categoryId).ifPresent(trip::setCategory);
-            if (trip.getId() == null) {
-                tripDAO.createTrip(trip);
-            } else {
-                tripDAO.updateTrip(trip);
+        Optional<Member> memberOpt = memberDAO.getMemberByEmail(auth.getName());
+        if (memberOpt.isEmpty()) return "redirect:/login";
+
+        Member currentMember = memberOpt.get();
+        boolean isAdmin = isAdmin(auth);
+        Optional<Category> category = categoryDAO.getCategoryById(categoryId);
+
+        if (trip.getId() == null) {
+            // Nouvelle sortie — le créateur est le membre courant
+            trip.setCreator(currentMember);
+            category.ifPresent(trip::setCategory);
+            Trip saved = tripDAO.createTrip(trip);
+            return "redirect:/trips/" + saved.getId();
+        } else {
+            // Modification — vérifier la propriété
+            Optional<Trip> existingOpt = tripDAO.getTripById(trip.getId());
+            if (existingOpt.isEmpty()) return "redirect:/member/my-trips";
+
+            Trip existing = existingOpt.get();
+            if (!isAdmin && !existing.getCreator().getId().equals(currentMember.getId())) {
+                return "redirect:/member/my-trips";
             }
+            // Mise à jour des champs éditables uniquement (creator inchangé)
+            existing.setName(trip.getName());
+            existing.setDescription(trip.getDescription());
+            existing.setWebsite(trip.getWebsite());
+            existing.setDate(trip.getDate());
+            category.ifPresent(existing::setCategory);
+            tripDAO.updateTrip(existing);
+            return "redirect:/trips/" + existing.getId();
         }
-        return "redirect:/categories";
     }
 
+    /** Formulaire de modification avec vérification propriété */
     @GetMapping("/member/trips/{id}/edit")
     public String editTripForm(@PathVariable Long id, Model model) {
-        Optional<Trip> trip = tripDAO.getTripById(id);
-        if (trip.isPresent()) {
-            model.addAttribute("trip", trip.get());
-            model.addAttribute("categories", categoryDAO.getAllCategories());
-            return "trip_form";
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        Optional<Member> memberOpt = memberDAO.getMemberByEmail(auth.getName());
+        if (memberOpt.isEmpty()) return "redirect:/login";
+
+        Optional<Trip> tripOpt = tripDAO.getTripById(id);
+        if (tripOpt.isEmpty()) return "redirect:/member/my-trips";
+
+        Trip trip = tripOpt.get();
+        if (!isAdmin(auth) && !trip.getCreator().getId().equals(memberOpt.get().getId())) {
+            return "redirect:/member/my-trips";
         }
-        return "redirect:/categories";
+
+        model.addAttribute("trip", trip);
+        model.addAttribute("categories", categoryDAO.getAllCategories());
+        return "trip_form";
     }
 
+    /** Suppression avec vérification propriété */
     @PostMapping("/member/trips/{id}/delete")
     public String deleteTrip(@PathVariable Long id) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        Optional<Member> memberOpt = memberDAO.getMemberByEmail(auth.getName());
+        if (memberOpt.isEmpty()) return "redirect:/login";
+
+        Optional<Trip> tripOpt = tripDAO.getTripById(id);
+        if (tripOpt.isEmpty()) return "redirect:/member/my-trips";
+
+        Trip trip = tripOpt.get();
+        if (!isAdmin(auth) && !trip.getCreator().getId().equals(memberOpt.get().getId())) {
+            return "redirect:/member/my-trips";
+        }
+
         tripDAO.deleteTrip(id);
-        return "redirect:/categories";
+        return "redirect:/member/my-trips";
     }
 
     // ======================== Récupération de mot de passe ========================
@@ -245,5 +337,12 @@ public class WebController {
             model.addAttribute("message", "Mot de passe modifié avec succès. Vous pouvez vous connecter.");
         }
         return "login";
+    }
+
+    // ======================== Helper ========================
+
+    private boolean isAdmin(Authentication auth) {
+        return auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
     }
 }

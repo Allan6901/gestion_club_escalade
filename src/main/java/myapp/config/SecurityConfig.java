@@ -23,8 +23,8 @@ public class SecurityConfig {
                                  "/register").permitAll()
                 // Détail d'une sortie : lecture publique
                 .requestMatchers(HttpMethod.GET, "/trips/*").permitAll()
-                // Gestion des sorties : admins uniquement
-                .requestMatchers("/member/**").hasRole("ADMIN")
+                // Gestion des sorties : tout membre authentifié (vérif. propriété dans le contrôleur)
+                .requestMatchers("/member/**").authenticated()
                 // Tout le reste (inscription à une sortie, etc.) : connecté
                 .anyRequest().authenticated()
             )

@@ -1,6 +1,8 @@
 package myapp.dao;
 
 import myapp.model.Trip;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import java.util.List;
 import java.util.Optional;
 import java.sql.Date;
@@ -98,5 +100,10 @@ public interface TripDAO {
     void addParticipant(Long tripId, Long memberId);
     void removeParticipant(Long tripId, Long memberId);
     boolean isParticipant(Long tripId, Long memberId);
+
+    // ===== Versions paginées =====
+    Page<Trip> getTripsByCategoryPageable(Long categoryId, Pageable pageable);
+    Page<Trip> searchTripsPageable(String name, Long categoryId, Long memberId, Pageable pageable);
+    Page<Trip> getTripsByCreatorPageable(Long memberId, Pageable pageable);
 }
 

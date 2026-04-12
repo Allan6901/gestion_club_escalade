@@ -12,54 +12,93 @@
     <div class="container mt-5">
         <h1 class="mb-4">Recherche de sorties</h1>
 
-        <form action="/trips/search" method="get" class="mb-5 p-4 border rounded bg-light">
-            <div class="row">
-                <div class="col-md-5 mb-3">
+        <form action="/trips/search" method="get" class="mb-4 p-4 border rounded bg-light">
+            <div class="row g-3">
+                <div class="col-md-5">
                     <label for="name" class="form-label">Nom de la sortie</label>
-                    <input type="text" class="form-control" id="name" name="name" placeholder="Mot-clé...">
+                    <input type="text" class="form-control" id="name" name="name"
+                           placeholder="Mot-clé..." value="${searchName}">
                 </div>
-                <div class="col-md-5 mb-3">
+                <div class="col-md-5">
                     <label for="categoryId" class="form-label">Catégorie</label>
                     <select class="form-select" id="categoryId" name="categoryId">
                         <option value="">Toutes les catégories</option>
                         <c:forEach var="cat" items="${categories}">
-                            <option value="${cat.id}">${cat.name}</option>
+                            <option value="${cat.id}"
+                                ${searchCategoryId == cat.id ? 'selected' : ''}>${cat.name}</option>
                         </c:forEach>
                     </select>
                 </div>
-                <div class="col-md-2 d-flex align-items-end mb-3">
+                <div class="col-md-2 d-flex align-items-end">
                     <button type="submit" class="btn btn-primary w-100">Rechercher</button>
                 </div>
             </div>
         </form>
 
-        <h2>Résultats (${trips.size()})</h2>
+        <%-- Bandeau "Sorties de {créateur}" quand filtré par créateur --%>
+        <c:if test="${creatorFilter != null}">
+            <div class="alert alert-info d-flex justify-content-between align-items-center">
+                <span>Sorties proposées par <strong>${creatorFilter}</strong></span>
+                <a href="/trips/search" class="btn btn-sm btn-outline-secondary">Effacer le filtre</a>
+            </div>
+        </c:if>
+
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="mb-0">Résultats</h2>
+            <span class="badge bg-secondary fs-6">${totalElements} sortie(s) trouvée(s)</span>
+        </div>
+
         <c:if test="${empty trips}">
             <p class="text-muted">Aucune sortie trouvée pour ces critères.</p>
         </c:if>
 
-        <table class="table table-striped table-hover mt-3">
-            <thead class="table-dark">
-                <tr>
-                    <th>Nom</th>
-                    <th>Catégorie</th>
-                    <th>Date</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                <c:forEach var="trip" items="${trips}">
+        <c:if test="${not empty trips}">
+            <table class="table table-striped table-hover">
+                <thead class="table-dark">
                     <tr>
-                        <td>${trip.name}</td>
-                        <td>${trip.category.name}</td>
-                        <td><fmt:formatDate value="${trip.date}" pattern="dd/MM/yyyy"/></td>
-                        <td>
-                            <a href="/trips/${trip.id}" class="btn btn-sm btn-info text-white">Détails</a>
-                        </td>
+                        <th>Nom</th>
+                        <th>Catégorie</th>
+                        <th>Date</th>
+                        <th>Action</th>
                     </tr>
-                </c:forEach>
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    <c:forEach var="trip" items="${trips}">
+                        <tr>
+                            <td>${trip.name}</td>
+                            <td>${trip.category.name}</td>
+                            <td><fmt:formatDate value="${trip.date}" pattern="dd/MM/yyyy"/></td>
+                            <td>
+                                <a href="/trips/${trip.id}" class="btn btn-sm btn-info text-white">Détails</a>
+                            </td>
+                        </tr>
+                    </c:forEach>
+                </tbody>
+            </table>
+
+            <%-- Pagination — conserve les paramètres de recherche --%>
+            <c:if test="${totalPages > 1}">
+                <nav aria-label="Pagination recherche">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item ${currentPage == 0 ? 'disabled' : ''}">
+                            <a class="page-link"
+                               href="/trips/search?name=${searchName}&categoryId=${searchCategoryId}&memberId=${searchMemberId}&page=${currentPage - 1}">
+                                &laquo; Précédent
+                            </a>
+                        </li>
+                        <li class="page-item disabled">
+                            <span class="page-link">Page ${currentPage + 1} / ${totalPages}</span>
+                        </li>
+                        <li class="page-item ${currentPage + 1 >= totalPages ? 'disabled' : ''}">
+                            <a class="page-link"
+                               href="/trips/search?name=${searchName}&categoryId=${searchCategoryId}&memberId=${searchMemberId}&page=${currentPage + 1}">
+                                Suivant &raquo;
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </c:if>
+        </c:if>
 
         <a href="/" class="btn btn-secondary mt-3">Retour à l'accueil</a>
     </div>

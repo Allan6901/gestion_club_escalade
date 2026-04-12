@@ -14,7 +14,6 @@
 
         <form:form action="/member/trips" method="post" modelAttribute="trip" class="p-4 border rounded shadow-sm bg-light">
             <form:hidden path="id"/>
-            <form:hidden path="creator"/>
 
             <div class="mb-3">
                 <label for="name" class="form-label">Nom de la sortie</label>
@@ -47,7 +46,7 @@
             </div>
 
             <button type="submit" class="btn btn-primary w-100">${empty trip.id ? 'Créer' : 'Mettre à jour'}</button>
-            <a href="/" class="btn btn-secondary w-100 mt-2">Annuler</a>
+            <a href="/member/my-trips" class="btn btn-secondary w-100 mt-2">Annuler</a>
         </form:form>
     </div>
 </body>
