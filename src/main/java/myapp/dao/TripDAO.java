@@ -94,5 +94,9 @@ public interface TripDAO {
      * @return Nombre de sorties
      */
     long count();
+
+    void addParticipant(Long tripId, Long memberId);
+    void removeParticipant(Long tripId, Long memberId);
+    boolean isParticipant(Long tripId, Long memberId);
 }
 

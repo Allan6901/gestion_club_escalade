@@ -19,26 +19,48 @@
                 <p><strong>Catégorie :</strong> ${trip.category.name}</p>
                 <p><strong>Date :</strong> <fmt:formatDate value="${trip.date}" pattern="dd/MM/yyyy"/></p>
                 <p><strong>Description :</strong> ${trip.description}</p>
+                <p><strong>Participants :</strong> ${trip.participants.size()}</p>
 
                 <c:if test="${isAuthenticated}">
                     <hr>
                     <p><strong>Site Web :</strong> <a href="${trip.website}" target="_blank">${trip.website}</a></p>
-                    <p><strong>Créateur :</strong> ${trip.creator.firstName} ${trip.creator.lastName} (<a href="mailto:${trip.creator.email}">${trip.creator.email}</a>)</p>
+                    <p><strong>Créateur :</strong> ${trip.creator.firstName} ${trip.creator.lastName}
+                        (<a href="mailto:${trip.creator.email}">${trip.creator.email}</a>)</p>
                 </c:if>
+
                 <c:if test="${!isAuthenticated}">
                     <hr>
                     <div class="alert alert-warning">
-                        <a href="/login">Connectez-vous</a> pour voir le site web et les informations du créateur.
+                        <a href="/login">Connectez-vous</a> pour voir le site web, les informations du créateur et vous inscrire.
                     </div>
                 </c:if>
 
-                <c:if test="${isCreator}">
-                    <div class="mt-4">
-                        <a href="/member/trips/${trip.id}/edit" class="btn btn-warning">Modifier</a>
-                        <form action="/member/trips/${trip.id}/delete" method="post" class="d-inline">
-                            <button type="submit" class="btn btn-danger" onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette sortie ?');">Supprimer</button>
-                        </form>
-                    </div>
+                <%-- Boutons inscription / désinscription pour les membres --%>
+                <c:if test="${isAuthenticated && !isAdmin}">
+                    <hr>
+                    <c:choose>
+                        <c:when test="${isParticipant}">
+                            <form action="/trips/${trip.id}/unregister" method="post" class="d-inline">
+                                <button type="submit" class="btn btn-outline-danger">Se désinscrire de cette sortie</button>
+                            </form>
+                            <span class="ms-2 text-success fw-bold">✓ Vous êtes inscrit(e)</span>
+                        </c:when>
+                        <c:otherwise>
+                            <form action="/trips/${trip.id}/register" method="post" class="d-inline">
+                                <button type="submit" class="btn btn-success">S'inscrire à cette sortie</button>
+                            </form>
+                        </c:otherwise>
+                    </c:choose>
+                </c:if>
+
+                <%-- Boutons modification / suppression pour les admins --%>
+                <c:if test="${isAdmin}">
+                    <hr>
+                    <a href="/member/trips/${trip.id}/edit" class="btn btn-warning">Modifier</a>
+                    <form action="/member/trips/${trip.id}/delete" method="post" class="d-inline">
+                        <button type="submit" class="btn btn-danger"
+                                onclick="return confirm('Supprimer cette sortie ?');">Supprimer</button>
+                    </form>
                 </c:if>
             </div>
             <div class="card-footer text-muted">

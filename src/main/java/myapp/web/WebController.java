@@ -34,6 +34,8 @@ public class WebController {
     @Autowired(required = false)
     private JavaMailSender mailSender;
 
+    // ======================== Pages publiques ========================
+
     @GetMapping("/")
     public String home() {
         return "index";
@@ -59,33 +61,36 @@ public class WebController {
     @GetMapping("/trips/{id}")
     public String tripDetail(@PathVariable Long id, Model model) {
         Optional<Trip> trip = tripDAO.getTripById(id);
-        if (trip.isPresent()) {
-            model.addAttribute("trip", trip.get());
-            
-            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            boolean isAuthenticated = auth != null && auth.isAuthenticated() && !auth.getPrincipal().equals("anonymousUser");
-            model.addAttribute("isAuthenticated", isAuthenticated);
-            
-            if(isAuthenticated) {
-                String email = auth.getName();
-                Optional<Member> member = memberDAO.getMemberByEmail(email);
-                if(member.isPresent() && member.get().getId().equals(trip.get().getCreator().getId())) {
-                    model.addAttribute("isCreator", true);
-                } else {
-                    model.addAttribute("isCreator", false);
-                }
-            } else {
-                 model.addAttribute("isCreator", false);
-            }
-
-            return "trip_detail";
+        if (trip.isEmpty()) {
+            return "redirect:/categories";
         }
-        return "redirect:/categories";
+
+        model.addAttribute("trip", trip.get());
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        boolean isAuthenticated = auth != null && auth.isAuthenticated()
+                && !auth.getPrincipal().equals("anonymousUser");
+        boolean isAdmin = isAuthenticated && auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+
+        model.addAttribute("isAuthenticated", isAuthenticated);
+        model.addAttribute("isAdmin", isAdmin);
+
+        if (isAuthenticated && !isAdmin) {
+            memberDAO.getMemberByEmail(auth.getName()).ifPresent(member ->
+                model.addAttribute("isParticipant", tripDAO.isParticipant(id, member.getId()))
+            );
+        }
+        if (!model.containsAttribute("isParticipant")) {
+            model.addAttribute("isParticipant", false);
+        }
+
+        return "trip_detail";
     }
 
     @GetMapping("/trips/search")
-    public String searchTrips(@RequestParam(required = false) String name, 
-                              @RequestParam(required = false) Long categoryId, 
+    public String searchTrips(@RequestParam(required = false) String name,
+                              @RequestParam(required = false) Long categoryId,
                               Model model) {
         List<Trip> trips;
         if ((name != null && !name.isEmpty()) || categoryId != null) {
@@ -103,7 +108,55 @@ public class WebController {
         return "login";
     }
 
-    // Gestion des sorties par les membres authentifiés
+    // ======================== Inscription à l'application ========================
+
+    @GetMapping("/register")
+    public String registerForm() {
+        return "register";
+    }
+
+    @PostMapping("/register")
+    public String registerSubmit(@RequestParam String firstName,
+                                 @RequestParam String lastName,
+                                 @RequestParam String email,
+                                 @RequestParam String password,
+                                 Model model) {
+        if (memberDAO.getMemberByEmail(email).isPresent()) {
+            model.addAttribute("error", "Un compte existe déjà avec cet email.");
+            return "register";
+        }
+        Member member = new Member();
+        member.setFirstName(firstName);
+        member.setLastName(lastName);
+        member.setEmail(email);
+        member.setPassword(password);
+        member.setRole("MEMBER");
+        memberDAO.createMember(member);
+        return "redirect:/login?registered";
+    }
+
+    // ======================== Inscription / désinscription à une sortie ========================
+
+    @PostMapping("/trips/{id}/register")
+    public String registerForTrip(@PathVariable Long id) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        memberDAO.getMemberByEmail(auth.getName()).ifPresent(member ->
+            tripDAO.addParticipant(id, member.getId())
+        );
+        return "redirect:/trips/" + id;
+    }
+
+    @PostMapping("/trips/{id}/unregister")
+    public String unregisterFromTrip(@PathVariable Long id) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        memberDAO.getMemberByEmail(auth.getName()).ifPresent(member ->
+            tripDAO.removeParticipant(id, member.getId())
+        );
+        return "redirect:/trips/" + id;
+    }
+
+    // ======================== Gestion des sorties (ADMIN uniquement) ========================
+
     @GetMapping("/member/trips/new")
     public String newTripForm(Model model) {
         model.addAttribute("trip", new Trip());
@@ -114,14 +167,10 @@ public class WebController {
     @PostMapping("/member/trips")
     public String saveTrip(@ModelAttribute Trip trip, @RequestParam Long categoryId) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        String email = auth.getName();
-        Optional<Member> member = memberDAO.getMemberByEmail(email);
-
+        Optional<Member> member = memberDAO.getMemberByEmail(auth.getName());
         if (member.isPresent()) {
             trip.setCreator(member.get());
-            Optional<Category> cat = categoryDAO.getCategoryById(categoryId);
-            cat.ifPresent(trip::setCategory);
-
+            categoryDAO.getCategoryById(categoryId).ifPresent(trip::setCategory);
             if (trip.getId() == null) {
                 tripDAO.createTrip(trip);
             } else {
@@ -135,35 +184,21 @@ public class WebController {
     public String editTripForm(@PathVariable Long id, Model model) {
         Optional<Trip> trip = tripDAO.getTripById(id);
         if (trip.isPresent()) {
-            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            String email = auth.getName();
-            Optional<Member> member = memberDAO.getMemberByEmail(email);
-            
-            if(member.isPresent() && member.get().getId().equals(trip.get().getCreator().getId())) {
-                model.addAttribute("trip", trip.get());
-                model.addAttribute("categories", categoryDAO.getAllCategories());
-                return "trip_form";
-            }
+            model.addAttribute("trip", trip.get());
+            model.addAttribute("categories", categoryDAO.getAllCategories());
+            return "trip_form";
         }
         return "redirect:/categories";
     }
 
     @PostMapping("/member/trips/{id}/delete")
     public String deleteTrip(@PathVariable Long id) {
-        Optional<Trip> trip = tripDAO.getTripById(id);
-        if (trip.isPresent()) {
-            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            String email = auth.getName();
-            Optional<Member> member = memberDAO.getMemberByEmail(email);
-            
-            if(member.isPresent() && member.get().getId().equals(trip.get().getCreator().getId())) {
-                tripDAO.deleteTrip(id);
-            }
-        }
+        tripDAO.deleteTrip(id);
         return "redirect:/categories";
     }
 
-    // Récupération de mot de passe
+    // ======================== Récupération de mot de passe ========================
+
     @GetMapping("/forgot-password")
     public String forgotPasswordForm() {
         return "forgot_password";
@@ -173,29 +208,27 @@ public class WebController {
     public String forgotPasswordSubmit(@RequestParam String email, Model model) {
         Optional<Member> member = memberDAO.getMemberByEmail(email);
         if (member.isPresent()) {
-            // Dans un vrai projet, on stockerait un token en DB. Ici on simule pour l'exemple.
             String token = UUID.randomUUID().toString();
-            
             if (mailSender != null) {
                 try {
-                    SimpleMailMessage message = new SimpleMailMessage(); 
+                    SimpleMailMessage message = new SimpleMailMessage();
                     message.setFrom("noreply@escalade.com");
-                    message.setTo(email); 
-                    message.setSubject("Récupération de mot de passe"); 
-                    message.setText("Pour réinitialiser votre mot de passe, cliquez sur ce lien : http://localhost:8080/reset-password?token=" + token + "&email=" + email);
+                    message.setTo(email);
+                    message.setSubject("Récupération de mot de passe");
+                    message.setText("Pour réinitialiser votre mot de passe, cliquez sur ce lien : "
+                            + "http://localhost:8080/reset-password?token=" + token + "&email=" + email);
                     mailSender.send(message);
-                } catch(Exception e) {
+                } catch (Exception e) {
                     System.out.println("Erreur d'envoi de mail simulé : " + e.getMessage());
                 }
             }
-            
             model.addAttribute("message", "Un email a été envoyé pour réinitialiser votre mot de passe.");
         } else {
             model.addAttribute("error", "Aucun compte trouvé avec cet email.");
         }
         return "forgot_password";
     }
-    
+
     @GetMapping("/reset-password")
     public String resetPasswordForm(@RequestParam String email, @RequestParam String token, Model model) {
         model.addAttribute("email", email);
@@ -205,9 +238,9 @@ public class WebController {
     @PostMapping("/reset-password")
     public String resetPasswordSubmit(@RequestParam String email, @RequestParam String password, Model model) {
         Optional<Member> memberOpt = memberDAO.getMemberByEmail(email);
-        if(memberOpt.isPresent()) {
+        if (memberOpt.isPresent()) {
             Member member = memberOpt.get();
-            member.setPassword(password); // Pas d'encodage selon la config NoOp
+            member.setPassword(password);
             memberDAO.updateMember(member);
             model.addAttribute("message", "Mot de passe modifié avec succès. Vous pouvez vous connecter.");
         }

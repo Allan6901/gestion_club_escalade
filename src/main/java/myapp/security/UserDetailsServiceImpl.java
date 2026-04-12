@@ -25,9 +25,10 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         }
 
         Member member = memberOpt.get();
+        String role = (member.getRole() != null) ? member.getRole() : "MEMBER";
         return User.withUsername(member.getEmail())
-                .password("{noop}" + member.getPassword()) // {noop} car les mots de passe ne sont pas encodés pour le moment (démo)
-                .roles("USER")
+                .password("{noop}" + member.getPassword())
+                .roles(role)
                 .build();
     }
 }

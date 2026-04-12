@@ -3,6 +3,7 @@ package myapp.config;
 import jakarta.servlet.DispatcherType;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.web.SecurityFilterChain;
@@ -16,7 +17,15 @@ public class SecurityConfig {
         http
             .authorizeHttpRequests(authz -> authz
                 .dispatcherTypeMatchers(DispatcherType.FORWARD, DispatcherType.ERROR).permitAll()
-                .requestMatchers("/", "/categories", "/categories/**", "/trips", "/trips/search", "/css/**", "/webjars/**", "/forgot-password", "/reset-password").permitAll()
+                // Pages publiques
+                .requestMatchers("/", "/categories", "/categories/**", "/trips/search",
+                                 "/css/**", "/webjars/**", "/forgot-password", "/reset-password",
+                                 "/register").permitAll()
+                // Détail d'une sortie : lecture publique
+                .requestMatchers(HttpMethod.GET, "/trips/*").permitAll()
+                // Gestion des sorties : admins uniquement
+                .requestMatchers("/member/**").hasRole("ADMIN")
+                // Tout le reste (inscription à une sortie, etc.) : connecté
                 .anyRequest().authenticated()
             )
             .formLogin(form -> form

@@ -1,7 +1,9 @@
 package myapp.dao.impl;
 
 import myapp.dao.TripDAO;
+import myapp.model.Member;
 import myapp.model.Trip;
+import myapp.repo.MemberRepository;
 import myapp.repo.TripRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -21,6 +23,9 @@ public class TripDAOImpl implements TripDAO {
 
     @Autowired
     private TripRepository tripRepository;
+
+    @Autowired
+    private MemberRepository memberRepository;
 
     @Override
     public List<Trip> getAllTrips() {
@@ -120,6 +125,33 @@ public class TripDAOImpl implements TripDAO {
     @Override
     public long count() {
         return tripRepository.count();
+    }
+
+    @Override
+    public void addParticipant(Long tripId, Long memberId) {
+        Trip trip = tripRepository.findById(tripId)
+            .orElseThrow(() -> new IllegalArgumentException("Sortie non trouvée : " + tripId));
+        Member member = memberRepository.findById(memberId)
+            .orElseThrow(() -> new IllegalArgumentException("Membre non trouvé : " + memberId));
+        if (trip.getParticipants().stream().noneMatch(m -> m.getId().equals(memberId))) {
+            trip.getParticipants().add(member);
+            tripRepository.save(trip);
+        }
+    }
+
+    @Override
+    public void removeParticipant(Long tripId, Long memberId) {
+        Trip trip = tripRepository.findById(tripId)
+            .orElseThrow(() -> new IllegalArgumentException("Sortie non trouvée : " + tripId));
+        trip.getParticipants().removeIf(m -> m.getId().equals(memberId));
+        tripRepository.save(trip);
+    }
+
+    @Override
+    public boolean isParticipant(Long tripId, Long memberId) {
+        return tripRepository.findById(tripId)
+            .map(trip -> trip.getParticipants().stream().anyMatch(m -> m.getId().equals(memberId)))
+            .orElse(false);
     }
 }
 

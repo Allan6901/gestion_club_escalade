@@ -21,6 +21,11 @@
                     Vous avez été déconnecté avec succès.
                 </div>
             </c:if>
+            <c:if test="${param.registered != null}">
+                <div class="alert alert-success" role="alert">
+                    Compte créé avec succès ! Vous pouvez vous connecter.
+                </div>
+            </c:if>
 
             <form action="/login" method="post">
                 <div class="mb-3">
@@ -36,7 +41,12 @@
             <div class="mt-3 text-center">
                 <a href="/forgot-password" class="text-decoration-none">Mot de passe oublié ?</a>
             </div>
-            <div class="mt-3 text-center">
+            <hr>
+            <div class="text-center">
+                <span class="text-muted">Pas encore membre ?</span>
+                <a href="/register" class="btn btn-outline-success btn-sm ms-2">Créer un compte</a>
+            </div>
+            <div class="mt-2 text-center">
                 <a href="/" class="btn btn-secondary btn-sm">Retour à l'accueil</a>
             </div>
         </div>

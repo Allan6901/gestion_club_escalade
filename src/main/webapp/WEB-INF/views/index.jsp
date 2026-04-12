@@ -15,6 +15,7 @@
         <div class="mb-3">
             <sec:authorize access="!isAuthenticated()">
                 <a href="/login" class="btn btn-primary">Se connecter</a>
+                <a href="/register" class="btn btn-outline-success ms-2">S'inscrire</a>
                 <a href="/forgot-password" class="btn btn-link">Mot de passe oublié ?</a>
             </sec:authorize>
             <sec:authorize access="isAuthenticated()">
@@ -22,7 +23,9 @@
                 <form action="/logout" method="post" class="d-inline">
                     <button type="submit" class="btn btn-danger">Se déconnecter</button>
                 </form>
-                <a href="/member/trips/new" class="btn btn-success">Proposer une nouvelle sortie</a>
+                <sec:authorize access="hasRole('ADMIN')">
+                    <a href="/member/trips/new" class="btn btn-success ms-2">Proposer une nouvelle sortie</a>
+                </sec:authorize>
             </sec:authorize>
         </div>
 

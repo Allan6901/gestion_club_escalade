@@ -9,7 +9,7 @@ import java.util.List;
 
 @Entity
 @Data
-@ToString(exclude = "trips")
+@ToString(exclude = {"trips", "registeredTrips"})
 public class Member {
 
     @Id
@@ -20,8 +20,12 @@ public class Member {
     private String firstName;
     private String email;
     private String password;
+    private String role = "MEMBER"; // ADMIN ou MEMBER
 
     @OneToMany(mappedBy = "creator")
     private List<Trip> trips = new ArrayList<>();
+
+    @ManyToMany(mappedBy = "participants")
+    private List<Trip> registeredTrips = new ArrayList<>();
 
 }
