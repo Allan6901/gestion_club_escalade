@@ -1,7 +1,7 @@
 package myapp.security;
 
-import myapp.dao.MemberDAO;
 import myapp.model.Member;
+import myapp.service.MemberService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -15,11 +15,12 @@ import java.util.Optional;
 public class UserDetailsServiceImpl implements UserDetailsService {
 
     @Autowired
-    private MemberDAO memberDAO;
+    private MemberService memberService;
 
+    // Gère la connexion de Spring Security
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        Optional<Member> memberOpt = memberDAO.getMemberByEmail(email);
+        Optional<Member> memberOpt = memberService.getMemberByEmail(email);
         if (memberOpt.isEmpty()) {
             throw new UsernameNotFoundException("Utilisateur non trouvé avec l'email : " + email);
         }

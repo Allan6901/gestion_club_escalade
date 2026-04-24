@@ -51,7 +51,7 @@ public class DataInitializer implements CommandLineRunner {
     private void initializeData() {
         logger.info("Démarrage de l'initialisation des données...");
 
-        // === 30 catégories ===
+        //  30 catégories
         List<String> categoryNames = List.of(
             "Alpinisme de roche", "Alpinisme de neige", "Alpinisme mixte",
             "Escalade sportive", "Escalade en grande voie", "Escalade en falaise",
@@ -73,7 +73,7 @@ public class DataInitializer implements CommandLineRunner {
         }
         logger.info("Catégories créées : {}", categoryRepository.count());
 
-        // === 1 admin connu ===
+        // 1 admin connu
         Member admin = new Member();
         admin.setLastName("Admin");
         admin.setFirstName("Super");
@@ -82,7 +82,7 @@ public class DataInitializer implements CommandLineRunner {
         admin.setRole("ADMIN");
         memberRepository.save(admin);
 
-        // === 300 membres ===
+        // 300 membres
         String[] firstNames = {
             "Alice", "Antoine", "Baptiste", "Camille", "Claire", "David", "Delphine", "Emma",
             "Étienne", "François", "Gabrielle", "Hugo", "Inès", "Julien", "Karine", "Laura",
@@ -114,7 +114,7 @@ public class DataInitializer implements CommandLineRunner {
         }
         logger.info("Membres créés : {}", memberRepository.count());
 
-        // === 2000 sorties ===
+        // 2000 sorties
         List<Category> categories = categoryRepository.findAll();
         List<Member> members = memberRepository.findAll();
 
@@ -160,7 +160,6 @@ public class DataInitializer implements CommandLineRunner {
             String level      = levels[random.nextInt(levels.length)];
             String duration   = durations[random.nextInt(durations.length)];
             String descTpl    = descTemplates[random.nextInt(descTemplates.length)];
-            // Certains templates ont 4 args, d'autres 2 ou 3 — on passe les 4 et laisse String.format ignorer les extras
             String description;
             try {
                 description = String.format(descTpl, activity, location, level, duration);

@@ -116,5 +116,17 @@ public class MemberService {
     public long getTotalMembers() {
         return memberDAO.count();
     }
+
+    public Optional<Member> getMemberByEmail(String email) {
+        return memberDAO.getMemberByEmail(email);
+    }
+
+    public Member createMember(Member member) {
+        return memberDAO.createMember(member);
+    }
+
+    public Member updateMember(Member member) {
+        return memberDAO.updateMember(member);
+    }
 }
 

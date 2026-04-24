@@ -7,9 +7,12 @@ import myapp.model.Category;
 import myapp.model.Member;
 import myapp.model.Trip;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -117,6 +120,46 @@ public class TripService {
      */
     public long getTotalTrips() {
         return tripDAO.count();
+    }
+
+    public List<Trip> getAllTrips() {
+        return tripDAO.getAllTrips();
+    }
+
+    public Trip createTrip(Trip trip) {
+        return tripDAO.createTrip(trip);
+    }
+
+    public Trip updateTrip(Trip trip) {
+        return tripDAO.updateTrip(trip);
+    }
+
+    public void addParticipant(Long tripId, Long memberId) {
+        tripDAO.addParticipant(tripId, memberId);
+    }
+
+    public void removeParticipant(Long tripId, Long memberId) {
+        tripDAO.removeParticipant(tripId, memberId);
+    }
+
+    public boolean isParticipant(Long tripId, Long memberId) {
+        return tripDAO.isParticipant(tripId, memberId);
+    }
+
+    public Page<Trip> getTripsByCategoryPageable(Long categoryId, Pageable pageable) {
+        return tripDAO.getTripsByCategoryPageable(categoryId, pageable);
+    }
+
+    public Page<Trip> searchTripsPageable(String name, Long categoryId, Long memberId, Date startDate, Date endDate, Pageable pageable) {
+        return tripDAO.searchTripsPageable(name, categoryId, memberId, startDate, endDate, pageable);
+    }
+
+    public Page<Trip> getTripsByCreatorPageable(Long memberId, Pageable pageable) {
+        return tripDAO.getTripsByCreatorPageable(memberId, pageable);
+    }
+
+    public Page<Trip> getRegisteredTripsByMemberPageable(Long memberId, Pageable pageable) {
+        return tripDAO.getRegisteredTripsByMemberPageable(memberId, pageable);
     }
 }
 

@@ -1,4 +1,4 @@
-package myapp.web;
+package myapp.controller;
 
 import myapp.dao.MemberDAO;
 import myapp.model.Member;

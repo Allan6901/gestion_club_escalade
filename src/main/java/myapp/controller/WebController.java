@@ -1,11 +1,11 @@
-package myapp.web;
+package myapp.controller;
 
-import myapp.dao.CategoryDAO;
-import myapp.dao.MemberDAO;
-import myapp.dao.TripDAO;
 import myapp.model.Category;
 import myapp.model.Member;
 import myapp.model.Trip;
+import myapp.service.CategoryService;
+import myapp.service.MemberService;
+import myapp.service.TripService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -19,7 +19,6 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.sql.Date;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -29,13 +28,13 @@ public class WebController {
     private static final int PAGE_SIZE = 20;
 
     @Autowired
-    private CategoryDAO categoryDAO;
+    private CategoryService categoryService;
 
     @Autowired
-    private TripDAO tripDAO;
+    private TripService tripService;
 
     @Autowired
-    private MemberDAO memberDAO;
+    private MemberService memberService;
 
     @Autowired(required = false)
     private JavaMailSender mailSender;
@@ -43,7 +42,6 @@ public class WebController {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    // ======================== Pages publiques ========================
 
     @GetMapping("/")
     public String home() {
@@ -52,7 +50,7 @@ public class WebController {
 
     @GetMapping("/categories")
     public String categories(Model model) {
-        model.addAttribute("categories", categoryDAO.getAllCategories());
+        model.addAttribute("categories", categoryService.getAllCategories());
         return "categories";
     }
 
@@ -60,10 +58,10 @@ public class WebController {
     public String categoryTrips(@PathVariable Long id,
                                 @RequestParam(defaultValue = "0") int page,
                                 Model model) {
-        Optional<Category> category = categoryDAO.getCategoryById(id);
+        Optional<Category> category = categoryService.getCategoryById(id);
         if (category.isEmpty()) return "redirect:/categories";
 
-        Page<Trip> tripPage = tripDAO.getTripsByCategoryPageable(id, PageRequest.of(page, PAGE_SIZE));
+        Page<Trip> tripPage = tripService.getTripsByCategoryPageable(id, PageRequest.of(page, PAGE_SIZE));
         model.addAttribute("category", category.get());
         model.addAttribute("trips", tripPage.getContent());
         model.addAttribute("currentPage", tripPage.getNumber());
@@ -74,7 +72,7 @@ public class WebController {
 
     @GetMapping("/trips/{id}")
     public String tripDetail(@PathVariable Long id, Model model) {
-        Optional<Trip> tripOpt = tripDAO.getTripById(id);
+        Optional<Trip> tripOpt = tripService.getTripDetails(id);
         if (tripOpt.isEmpty()) return "redirect:/categories";
 
         Trip trip = tripOpt.get();
@@ -92,11 +90,11 @@ public class WebController {
         boolean canManage = isAdmin;
 
         if (isAuthenticated) {
-            Optional<Member> memberOpt = memberDAO.getMemberByEmail(auth.getName());
+            Optional<Member> memberOpt = memberService.getMemberByEmail(auth.getName());
             if (memberOpt.isPresent()) {
                 Member member = memberOpt.get();
                 if (!isAdmin) {
-                    isParticipant = tripDAO.isParticipant(id, member.getId());
+                    isParticipant = tripService.isParticipant(id, member.getId());
                     // Le créateur peut gérer sa sortie
                     canManage = trip.getCreator().getId().equals(member.getId());
                 }
@@ -119,7 +117,7 @@ public class WebController {
         Date start = (startDate != null && !startDate.isBlank()) ? Date.valueOf(startDate) : null;
         Date end   = (endDate   != null && !endDate.isBlank())   ? Date.valueOf(endDate)   : null;
 
-        Page<Trip> tripPage = tripDAO.searchTripsPageable(
+        Page<Trip> tripPage = tripService.searchTripsPageable(
                 (name != null && !name.isBlank()) ? name : null,
                 categoryId,
                 memberId,
@@ -129,7 +127,7 @@ public class WebController {
         );
 
         model.addAttribute("trips", tripPage.getContent());
-        model.addAttribute("categories", categoryDAO.getAllCategories());
+        model.addAttribute("categories", categoryService.getAllCategories());
         model.addAttribute("currentPage", tripPage.getNumber());
         model.addAttribute("totalPages", tripPage.getTotalPages());
         model.addAttribute("totalElements", tripPage.getTotalElements());
@@ -140,7 +138,7 @@ public class WebController {
         model.addAttribute("searchEndDate", endDate);
 
         if (memberId != null) {
-            memberDAO.getMemberById(memberId).ifPresent(m ->
+            memberService.getMemberById(memberId).ifPresent(m ->
                 model.addAttribute("creatorFilter", m.getFirstName() + " " + m.getLastName())
             );
         }
@@ -166,7 +164,7 @@ public class WebController {
                                  @RequestParam String email,
                                  @RequestParam String password,
                                  Model model) {
-        if (memberDAO.getMemberByEmail(email).isPresent()) {
+        if (memberService.getMemberByEmail(email).isPresent()) {
             model.addAttribute("error", "Un compte existe déjà avec cet email.");
             return "register";
         }
@@ -176,7 +174,7 @@ public class WebController {
         member.setEmail(email);
         member.setPassword(passwordEncoder.encode(password));
         member.setRole("MEMBER");
-        memberDAO.createMember(member);
+        memberService.createMember(member);
         return "redirect:/login?registered";
     }
 
@@ -185,8 +183,8 @@ public class WebController {
     @PostMapping("/trips/{id}/register")
     public String registerForTrip(@PathVariable Long id) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        memberDAO.getMemberByEmail(auth.getName()).ifPresent(member ->
-            tripDAO.addParticipant(id, member.getId())
+        memberService.getMemberByEmail(auth.getName()).ifPresent(member ->
+            tripService.addParticipant(id, member.getId())
         );
         return "redirect:/trips/" + id;
     }
@@ -194,8 +192,8 @@ public class WebController {
     @PostMapping("/trips/{id}/unregister")
     public String unregisterFromTrip(@PathVariable Long id) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        memberDAO.getMemberByEmail(auth.getName()).ifPresent(member ->
-            tripDAO.removeParticipant(id, member.getId())
+        memberService.getMemberByEmail(auth.getName()).ifPresent(member ->
+            tripService.removeParticipant(id, member.getId())
         );
         return "redirect:/trips/" + id;
     }
@@ -206,8 +204,8 @@ public class WebController {
     @GetMapping("/member/my-registrations")
     public String myRegistrations(@RequestParam(defaultValue = "0") int page, Model model) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        memberDAO.getMemberByEmail(auth.getName()).ifPresent(member -> {
-            Page<Trip> tripPage = tripDAO.getRegisteredTripsByMemberPageable(
+        memberService.getMemberByEmail(auth.getName()).ifPresent(member -> {
+            Page<Trip> tripPage = tripService.getRegisteredTripsByMemberPageable(
                     member.getId(), PageRequest.of(page, PAGE_SIZE));
             model.addAttribute("trips", tripPage.getContent());
             model.addAttribute("currentPage", tripPage.getNumber());
@@ -222,8 +220,8 @@ public class WebController {
     @GetMapping("/member/my-trips")
     public String myTrips(@RequestParam(defaultValue = "0") int page, Model model) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        memberDAO.getMemberByEmail(auth.getName()).ifPresent(member -> {
-            Page<Trip> tripPage = tripDAO.getTripsByCreatorPageable(
+        memberService.getMemberByEmail(auth.getName()).ifPresent(member -> {
+            Page<Trip> tripPage = tripService.getTripsByCreatorPageable(
                     member.getId(), PageRequest.of(page, PAGE_SIZE));
             model.addAttribute("trips", tripPage.getContent());
             model.addAttribute("currentPage", tripPage.getNumber());
@@ -238,7 +236,7 @@ public class WebController {
     @GetMapping("/member/trips/new")
     public String newTripForm(Model model) {
         model.addAttribute("trip", new Trip());
-        model.addAttribute("categories", categoryDAO.getAllCategories());
+        model.addAttribute("categories", categoryService.getAllCategories());
         return "trip_form";
     }
 
@@ -246,22 +244,22 @@ public class WebController {
     @PostMapping("/member/trips")
     public String saveTrip(@ModelAttribute Trip trip, @RequestParam Long categoryId) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        Optional<Member> memberOpt = memberDAO.getMemberByEmail(auth.getName());
+        Optional<Member> memberOpt = memberService.getMemberByEmail(auth.getName());
         if (memberOpt.isEmpty()) return "redirect:/login";
 
         Member currentMember = memberOpt.get();
         boolean isAdmin = isAdmin(auth);
-        Optional<Category> category = categoryDAO.getCategoryById(categoryId);
+        Optional<Category> category = categoryService.getCategoryById(categoryId);
 
         if (trip.getId() == null) {
             // Nouvelle sortie — le créateur est le membre courant
             trip.setCreator(currentMember);
             category.ifPresent(trip::setCategory);
-            Trip saved = tripDAO.createTrip(trip);
+            Trip saved = tripService.createTrip(trip);
             return "redirect:/trips/" + saved.getId();
         } else {
             // Modification — vérifier la propriété
-            Optional<Trip> existingOpt = tripDAO.getTripById(trip.getId());
+            Optional<Trip> existingOpt = tripService.getTripDetails(trip.getId());
             if (existingOpt.isEmpty()) return "redirect:/member/my-trips";
 
             Trip existing = existingOpt.get();
@@ -274,7 +272,7 @@ public class WebController {
             existing.setWebsite(trip.getWebsite());
             existing.setDate(trip.getDate());
             category.ifPresent(existing::setCategory);
-            tripDAO.updateTrip(existing);
+            tripService.updateTrip(existing);
             return "redirect:/trips/" + existing.getId();
         }
     }
@@ -283,10 +281,10 @@ public class WebController {
     @GetMapping("/member/trips/{id}/edit")
     public String editTripForm(@PathVariable Long id, Model model) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        Optional<Member> memberOpt = memberDAO.getMemberByEmail(auth.getName());
+        Optional<Member> memberOpt = memberService.getMemberByEmail(auth.getName());
         if (memberOpt.isEmpty()) return "redirect:/login";
 
-        Optional<Trip> tripOpt = tripDAO.getTripById(id);
+        Optional<Trip> tripOpt = tripService.getTripDetails(id);
         if (tripOpt.isEmpty()) return "redirect:/member/my-trips";
 
         Trip trip = tripOpt.get();
@@ -295,7 +293,7 @@ public class WebController {
         }
 
         model.addAttribute("trip", trip);
-        model.addAttribute("categories", categoryDAO.getAllCategories());
+        model.addAttribute("categories", categoryService.getAllCategories());
         return "trip_form";
     }
 
@@ -303,10 +301,10 @@ public class WebController {
     @PostMapping("/member/trips/{id}/delete")
     public String deleteTrip(@PathVariable Long id) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        Optional<Member> memberOpt = memberDAO.getMemberByEmail(auth.getName());
+        Optional<Member> memberOpt = memberService.getMemberByEmail(auth.getName());
         if (memberOpt.isEmpty()) return "redirect:/login";
 
-        Optional<Trip> tripOpt = tripDAO.getTripById(id);
+        Optional<Trip> tripOpt = tripService.getTripDetails(id);
         if (tripOpt.isEmpty()) return "redirect:/member/my-trips";
 
         Trip trip = tripOpt.get();
@@ -314,7 +312,7 @@ public class WebController {
             return "redirect:/member/my-trips";
         }
 
-        tripDAO.deleteTrip(id);
+        tripService.deleteTrip(id);
         return "redirect:/member/my-trips";
     }
 
@@ -327,7 +325,7 @@ public class WebController {
 
     @PostMapping("/forgot-password")
     public String forgotPasswordSubmit(@RequestParam String email, Model model) {
-        Optional<Member> member = memberDAO.getMemberByEmail(email);
+        Optional<Member> member = memberService.getMemberByEmail(email);
         if (member.isPresent()) {
             String token = UUID.randomUUID().toString();
             if (mailSender != null) {
@@ -358,11 +356,11 @@ public class WebController {
 
     @PostMapping("/reset-password")
     public String resetPasswordSubmit(@RequestParam String email, @RequestParam String password, Model model) {
-        Optional<Member> memberOpt = memberDAO.getMemberByEmail(email);
+        Optional<Member> memberOpt = memberService.getMemberByEmail(email);
         if (memberOpt.isPresent()) {
             Member member = memberOpt.get();
             member.setPassword(passwordEncoder.encode(password));
-            memberDAO.updateMember(member);
+            memberService.updateMember(member);
             model.addAttribute("message", "Mot de passe modifié avec succès. Vous pouvez vous connecter.");
         }
         return "login";

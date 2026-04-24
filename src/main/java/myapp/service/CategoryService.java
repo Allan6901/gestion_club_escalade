@@ -29,6 +29,10 @@ public class CategoryService {
         return categoryDAO.getAllCategories();
     }
 
+    public Optional<Category> getCategoryById(Long id) {
+        return categoryDAO.getCategoryById(id);
+    }
+
     /**
      * Récupère une catégorie avec toutes ses sorties
      */

@@ -49,7 +49,6 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
                            @Param("categoryId") Long categoryId,
                            @Param("memberId") Long memberId);
 
-    // ===== Versions paginées =====
 
     @Query("SELECT t FROM Trip t WHERE t.category.id = :categoryId ORDER BY t.date ASC")
     Page<Trip> findByCategoryPageable(@Param("categoryId") Long categoryId, Pageable pageable);
