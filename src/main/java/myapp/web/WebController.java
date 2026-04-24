@@ -13,10 +13,12 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.sql.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -37,6 +39,9 @@ public class WebController {
 
     @Autowired(required = false)
     private JavaMailSender mailSender;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     // ======================== Pages publiques ========================
 
@@ -107,12 +112,19 @@ public class WebController {
     public String searchTrips(@RequestParam(required = false) String name,
                               @RequestParam(required = false) Long categoryId,
                               @RequestParam(required = false) Long memberId,
+                              @RequestParam(required = false) String startDate,
+                              @RequestParam(required = false) String endDate,
                               @RequestParam(defaultValue = "0") int page,
                               Model model) {
+        Date start = (startDate != null && !startDate.isBlank()) ? Date.valueOf(startDate) : null;
+        Date end   = (endDate   != null && !endDate.isBlank())   ? Date.valueOf(endDate)   : null;
+
         Page<Trip> tripPage = tripDAO.searchTripsPageable(
                 (name != null && !name.isBlank()) ? name : null,
                 categoryId,
                 memberId,
+                start,
+                end,
                 PageRequest.of(page, PAGE_SIZE)
         );
 
@@ -124,8 +136,9 @@ public class WebController {
         model.addAttribute("searchName", name);
         model.addAttribute("searchCategoryId", categoryId);
         model.addAttribute("searchMemberId", memberId);
+        model.addAttribute("searchStartDate", startDate);
+        model.addAttribute("searchEndDate", endDate);
 
-        // Pour afficher "Sorties de Prénom Nom" quand filtré par créateur
         if (memberId != null) {
             memberDAO.getMemberById(memberId).ifPresent(m ->
                 model.addAttribute("creatorFilter", m.getFirstName() + " " + m.getLastName())
@@ -161,7 +174,7 @@ public class WebController {
         member.setFirstName(firstName);
         member.setLastName(lastName);
         member.setEmail(email);
-        member.setPassword(password);
+        member.setPassword(passwordEncoder.encode(password));
         member.setRole("MEMBER");
         memberDAO.createMember(member);
         return "redirect:/login?registered";
@@ -188,6 +201,22 @@ public class WebController {
     }
 
     // ======================== Gestion des sorties (tout membre authentifié) ========================
+
+    /** Page "Mes inscriptions" */
+    @GetMapping("/member/my-registrations")
+    public String myRegistrations(@RequestParam(defaultValue = "0") int page, Model model) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        memberDAO.getMemberByEmail(auth.getName()).ifPresent(member -> {
+            Page<Trip> tripPage = tripDAO.getRegisteredTripsByMemberPageable(
+                    member.getId(), PageRequest.of(page, PAGE_SIZE));
+            model.addAttribute("trips", tripPage.getContent());
+            model.addAttribute("currentPage", tripPage.getNumber());
+            model.addAttribute("totalPages", tripPage.getTotalPages());
+            model.addAttribute("totalElements", tripPage.getTotalElements());
+            model.addAttribute("memberName", member.getFirstName() + " " + member.getLastName());
+        });
+        return "my_registrations";
+    }
 
     /** Page "Mes sorties" */
     @GetMapping("/member/my-trips")
@@ -332,7 +361,7 @@ public class WebController {
         Optional<Member> memberOpt = memberDAO.getMemberByEmail(email);
         if (memberOpt.isPresent()) {
             Member member = memberOpt.get();
-            member.setPassword(password);
+            member.setPassword(passwordEncoder.encode(password));
             memberDAO.updateMember(member);
             model.addAttribute("message", "Mot de passe modifié avec succès. Vous pouvez vous connecter.");
         }

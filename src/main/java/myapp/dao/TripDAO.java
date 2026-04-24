@@ -103,7 +103,8 @@ public interface TripDAO {
 
     // ===== Versions paginées =====
     Page<Trip> getTripsByCategoryPageable(Long categoryId, Pageable pageable);
-    Page<Trip> searchTripsPageable(String name, Long categoryId, Long memberId, Pageable pageable);
+    Page<Trip> searchTripsPageable(String name, Long categoryId, Long memberId, Date startDate, Date endDate, Pageable pageable);
     Page<Trip> getTripsByCreatorPageable(Long memberId, Pageable pageable);
+    Page<Trip> getRegisteredTripsByMemberPageable(Long memberId, Pageable pageable);
 }
 

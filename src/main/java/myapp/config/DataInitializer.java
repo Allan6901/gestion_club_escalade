@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,6 +36,9 @@ public class DataInitializer implements CommandLineRunner {
 
     @Autowired
     private TripRepository tripRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     @Override
     @Transactional
@@ -74,7 +78,7 @@ public class DataInitializer implements CommandLineRunner {
         admin.setLastName("Admin");
         admin.setFirstName("Super");
         admin.setEmail("admin@test.com");
-        admin.setPassword("admin");
+        admin.setPassword(passwordEncoder.encode("admin"));
         admin.setRole("ADMIN");
         memberRepository.save(admin);
 
@@ -104,7 +108,7 @@ public class DataInitializer implements CommandLineRunner {
             member.setFirstName(firstNames[i % firstNames.length]);
             member.setLastName(lastNames[i % lastNames.length] + i);
             member.setEmail("membre" + i + "@escalade.fr");
-            member.setPassword("pass" + i);
+            member.setPassword(passwordEncoder.encode("pass" + i));
             member.setRole("MEMBER");
             memberRepository.save(member);
         }

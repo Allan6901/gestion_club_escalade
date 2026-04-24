@@ -162,11 +162,13 @@ public class TripDAOImpl implements TripDAO {
     }
 
     @Override
-    public Page<Trip> searchTripsPageable(String name, Long categoryId, Long memberId, Pageable pageable) {
+    public Page<Trip> searchTripsPageable(String name, Long categoryId, Long memberId, Date startDate, Date endDate, Pageable pageable) {
         return tripRepository.searchTripsPageable(
             (name != null && !name.trim().isEmpty()) ? name : null,
             (categoryId != null && categoryId > 0) ? categoryId : null,
             (memberId != null && memberId > 0) ? memberId : null,
+            startDate,
+            endDate,
             pageable
         );
     }
@@ -174,6 +176,11 @@ public class TripDAOImpl implements TripDAO {
     @Override
     public Page<Trip> getTripsByCreatorPageable(Long memberId, Pageable pageable) {
         return tripRepository.findByCreatorPageable(memberId, pageable);
+    }
+
+    @Override
+    public Page<Trip> getRegisteredTripsByMemberPageable(Long memberId, Pageable pageable) {
+        return tripRepository.findByParticipantPageable(memberId, pageable);
     }
 }
 
