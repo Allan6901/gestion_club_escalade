@@ -14,12 +14,12 @@
 
         <form action="/trips/search" method="get" class="mb-4 p-4 border rounded bg-light">
             <div class="row g-3">
-                <div class="col-md-5">
+                <div class="col-md-4">
                     <label for="name" class="form-label">Nom de la sortie</label>
                     <input type="text" class="form-control" id="name" name="name"
                            placeholder="Mot-clé..." value="${searchName}">
                 </div>
-                <div class="col-md-5">
+                <div class="col-md-4">
                     <label for="categoryId" class="form-label">Catégorie</label>
                     <select class="form-select" id="categoryId" name="categoryId">
                         <option value="">Toutes les catégories</option>
@@ -29,8 +29,19 @@
                         </c:forEach>
                     </select>
                 </div>
-                <div class="col-md-2 d-flex align-items-end">
-                    <button type="submit" class="btn btn-primary w-100">Rechercher</button>
+                <div class="col-md-2">
+                    <label for="startDate" class="form-label">Date début</label>
+                    <input type="date" class="form-control" id="startDate" name="startDate"
+                           value="${searchStartDate}">
+                </div>
+                <div class="col-md-2">
+                    <label for="endDate" class="form-label">Date fin</label>
+                    <input type="date" class="form-control" id="endDate" name="endDate"
+                           value="${searchEndDate}">
+                </div>
+                <div class="col-12 d-flex justify-content-end gap-2">
+                    <a href="/trips/search" class="btn btn-outline-secondary">Réinitialiser</a>
+                    <button type="submit" class="btn btn-primary">Rechercher</button>
                 </div>
             </div>
         </form>
@@ -82,7 +93,7 @@
                     <ul class="pagination justify-content-center">
                         <li class="page-item ${currentPage == 0 ? 'disabled' : ''}">
                             <a class="page-link"
-                               href="/trips/search?name=${searchName}&categoryId=${searchCategoryId}&memberId=${searchMemberId}&page=${currentPage - 1}">
+                               href="/trips/search?name=${searchName}&categoryId=${searchCategoryId}&memberId=${searchMemberId}&startDate=${searchStartDate}&endDate=${searchEndDate}&page=${currentPage - 1}">
                                 &laquo; Précédent
                             </a>
                         </li>
@@ -91,7 +102,7 @@
                         </li>
                         <li class="page-item ${currentPage + 1 >= totalPages ? 'disabled' : ''}">
                             <a class="page-link"
-                               href="/trips/search?name=${searchName}&categoryId=${searchCategoryId}&memberId=${searchMemberId}&page=${currentPage + 1}">
+                               href="/trips/search?name=${searchName}&categoryId=${searchCategoryId}&memberId=${searchMemberId}&startDate=${searchStartDate}&endDate=${searchEndDate}&page=${currentPage + 1}">
                                 Suivant &raquo;
                             </a>
                         </li>

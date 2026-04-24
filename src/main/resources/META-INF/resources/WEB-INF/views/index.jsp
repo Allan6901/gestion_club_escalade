@@ -24,6 +24,7 @@
                     <button type="submit" class="btn btn-danger">Se déconnecter</button>
                 </form>
                 <a href="/member/my-trips" class="btn btn-outline-primary ms-2">Mes sorties</a>
+                <a href="/member/my-registrations" class="btn btn-outline-info ms-2">Mes inscriptions</a>
                 <a href="/member/trips/new" class="btn btn-success ms-2">Proposer une nouvelle sortie</a>
             </sec:authorize>
         </div>

@@ -57,13 +57,20 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
     @Query("SELECT t FROM Trip t WHERE " +
            "(:name IS NULL OR LOWER(t.name) LIKE LOWER(CONCAT('%', :name, '%'))) AND " +
            "(:categoryId IS NULL OR t.category.id = :categoryId) AND " +
-           "(:memberId IS NULL OR t.creator.id = :memberId)")
+           "(:memberId IS NULL OR t.creator.id = :memberId) AND " +
+           "(:startDate IS NULL OR t.date >= :startDate) AND " +
+           "(:endDate IS NULL OR t.date <= :endDate)")
     Page<Trip> searchTripsPageable(@Param("name") String name,
                                    @Param("categoryId") Long categoryId,
                                    @Param("memberId") Long memberId,
+                                   @Param("startDate") Date startDate,
+                                   @Param("endDate") Date endDate,
                                    Pageable pageable);
 
     @Query("SELECT t FROM Trip t WHERE t.creator.id = :memberId ORDER BY t.date ASC")
     Page<Trip> findByCreatorPageable(@Param("memberId") Long memberId, Pageable pageable);
+
+    @Query("SELECT t FROM Trip t JOIN t.participants p WHERE p.id = :memberId ORDER BY t.date ASC")
+    Page<Trip> findByParticipantPageable(@Param("memberId") Long memberId, Pageable pageable);
 
 }
