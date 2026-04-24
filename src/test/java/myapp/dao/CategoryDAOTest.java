@@ -18,10 +18,6 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/**
- * Tests JUnit pour le DAO CategoryDAO.
- * Valide les opérations CRUD et les requêtes de recherche.
- */
 @DataJpaTest
 @Import(CategoryDAOImpl.class)
 public class CategoryDAOTest {
@@ -39,8 +35,6 @@ public class CategoryDAOTest {
         testCategory = new Category();
         testCategory.setName("Escalade Sportive");
     }
-
-    // ========== Tests CREATE ==========
 
     @Test
     public void testCreateCategory() {
@@ -65,8 +59,6 @@ public class CategoryDAOTest {
     public void testCreateNullCategory() {
         assertThrows(IllegalArgumentException.class, () -> categoryDAO.createCategory(null));
     }
-
-    // ========== Tests READ ==========
 
     @Test
     public void testGetAllCategories() {
@@ -110,7 +102,7 @@ public class CategoryDAOTest {
     @Test
     public void testGetCategoryWithTrips() {
         Category saved = entityManager.persistAndFlush(testCategory);
-        
+
         Member member = new Member();
         member.setLastName("Dupont");
         member.setFirstName("Jean");
@@ -124,7 +116,6 @@ public class CategoryDAOTest {
         trip.setCreator(member);
         entityManager.persistAndFlush(trip);
 
-        // Vider le cache L1 pour forcer le rechargement depuis la BDD (JOIN FETCH)
         entityManager.flush();
         entityManager.clear();
 
@@ -133,13 +124,11 @@ public class CategoryDAOTest {
         assertEquals(1, found.get().getTrips().size());
     }
 
-    // ========== Tests UPDATE ==========
-
     @Test
     public void testUpdateCategory() {
         Category saved = entityManager.persistAndFlush(testCategory);
         saved.setName("Alpinisme");
-        
+
         Category updated = categoryDAO.updateCategory(saved);
         assertEquals("Alpinisme", updated.getName());
     }
@@ -149,8 +138,6 @@ public class CategoryDAOTest {
         testCategory.setId(999L);
         assertThrows(IllegalArgumentException.class, () -> categoryDAO.updateCategory(testCategory));
     }
-
-    // ========== Tests DELETE ==========
 
     @Test
     public void testDeleteCategory() {
@@ -165,12 +152,10 @@ public class CategoryDAOTest {
         assertThrows(IllegalArgumentException.class, () -> categoryDAO.deleteCategory(999L));
     }
 
-    // ========== Tests SEARCH ==========
-
     @Test
     public void testGetTripsByCategory() {
         Category saved = entityManager.persistAndFlush(testCategory);
-        
+
         Member member = new Member();
         member.setLastName("Martin");
         member.setFirstName("Paul");
@@ -194,8 +179,6 @@ public class CategoryDAOTest {
         assertEquals(2, trips.size());
     }
 
-    // ========== Tests UTILITIES ==========
-
     @Test
     public void testCategoryExists() {
         Category saved = entityManager.persistAndFlush(testCategory);
@@ -210,4 +193,3 @@ public class CategoryDAOTest {
         assertTrue(count >= 1);
     }
 }
-

@@ -17,10 +17,6 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/**
- * Tests JUnit pour le DAO MemberDAO.
- * Valide les opérations CRUD et les requêtes de recherche.
- */
 @DataJpaTest
 @Import(MemberDAOImpl.class)
 public class MemberDAOTest {
@@ -41,8 +37,6 @@ public class MemberDAOTest {
         testMember.setEmail("jean.dupont@example.com");
         testMember.setPassword("password123");
     }
-
-    // ========== Tests CREATE ==========
 
     @Test
     public void testCreateMember() {
@@ -94,8 +88,6 @@ public class MemberDAOTest {
     public void testCreateNullMember() {
         assertThrows(IllegalArgumentException.class, () -> memberDAO.createMember(null));
     }
-
-    // ========== Tests READ ==========
 
     @Test
     public void testGetAllMembers() {
@@ -162,14 +154,9 @@ public class MemberDAOTest {
     public void testGetMemberWithTrips() {
         Member saved = entityManager.persistAndFlush(testMember);
 
-        // Créer une catégorie et des sorties
-        // ... création des données ...
-
         Optional<Member> found = memberDAO.getMemberWithTrips(saved.getId());
         assertTrue(found.isPresent());
     }
-
-    // ========== Tests UPDATE ==========
 
     @Test
     public void testUpdateMember() {
@@ -186,8 +173,6 @@ public class MemberDAOTest {
         assertThrows(IllegalArgumentException.class, () -> memberDAO.updateMember(testMember));
     }
 
-    // ========== Tests DELETE ==========
-
     @Test
     public void testDeleteMember() {
         Member saved = entityManager.persistAndFlush(testMember);
@@ -200,8 +185,6 @@ public class MemberDAOTest {
     public void testDeleteNonExistentMember() {
         assertThrows(IllegalArgumentException.class, () -> memberDAO.deleteMember(999L));
     }
-
-    // ========== Tests UTILITIES ==========
 
     @Test
     public void testMemberExists() {
@@ -217,4 +200,3 @@ public class MemberDAOTest {
         assertTrue(count >= 1);
     }
 }
-

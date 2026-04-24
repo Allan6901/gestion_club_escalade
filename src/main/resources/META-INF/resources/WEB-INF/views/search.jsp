@@ -46,7 +46,7 @@
             </div>
         </form>
 
-        <%-- Bandeau "Sorties de {créateur}" quand filtré par créateur --%>
+        <%-- "Sorties de {créateur}" quand filtré par créateur --%>
         <c:if test="${creatorFilter != null}">
             <div class="alert alert-info d-flex justify-content-between align-items-center">
                 <span>Sorties proposées par <strong>${creatorFilter}</strong></span>

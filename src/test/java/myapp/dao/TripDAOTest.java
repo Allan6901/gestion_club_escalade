@@ -23,10 +23,6 @@ import org.springframework.data.domain.PageRequest;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/**
- * Tests JUnit pour le DAO TripDAO.
- * Valide les opérations CRUD et les requêtes de recherche.
- */
 @DataJpaTest
 @Import(TripDAOImpl.class)
 public class TripDAOTest {
@@ -43,7 +39,6 @@ public class TripDAOTest {
 
     @BeforeEach
     public void setUp() {
-        // Créer un membre
         testMember = new Member();
         testMember.setLastName("Dupont");
         testMember.setFirstName("Jean");
@@ -51,12 +46,10 @@ public class TripDAOTest {
         testMember.setPassword("pass123");
         testMember = entityManager.persistAndFlush(testMember);
 
-        // Créer une catégorie
         testCategory = new Category();
         testCategory.setName("Escalade Sportive");
         testCategory = entityManager.persistAndFlush(testCategory);
 
-        // Créer une sortie
         testTrip = new Trip();
         testTrip.setName("Sortie Test");
         testTrip.setDescription("Description test");
@@ -65,8 +58,6 @@ public class TripDAOTest {
         testTrip.setCreator(testMember);
         testTrip.setCategory(testCategory);
     }
-
-    // ========== Tests CREATE ==========
 
     @Test
     public void testCreateTrip() {
@@ -99,8 +90,6 @@ public class TripDAOTest {
     public void testCreateNullTrip() {
         assertThrows(IllegalArgumentException.class, () -> tripDAO.createTrip(null));
     }
-
-    // ========== Tests READ ==========
 
     @Test
     public void testGetAllTrips() {
@@ -142,13 +131,11 @@ public class TripDAOTest {
         assertFalse(found.isPresent());
     }
 
-    // ========== Tests UPDATE ==========
-
     @Test
     public void testUpdateTrip() {
         Trip saved = entityManager.persistAndFlush(testTrip);
         saved.setName("Sortie Modifiée");
-        
+
         Trip updated = tripDAO.updateTrip(saved);
         assertEquals("Sortie Modifiée", updated.getName());
     }
@@ -158,8 +145,6 @@ public class TripDAOTest {
         testTrip.setId(999L);
         assertThrows(IllegalArgumentException.class, () -> tripDAO.updateTrip(testTrip));
     }
-
-    // ========== Tests DELETE ==========
 
     @Test
     public void testDeleteTrip() {
@@ -173,8 +158,6 @@ public class TripDAOTest {
     public void testDeleteNonExistentTrip() {
         assertThrows(IllegalArgumentException.class, () -> tripDAO.deleteTrip(999L));
     }
-
-    // ========== Tests SEARCH ==========
 
     @Test
     public void testSearchTripsByName() {
@@ -238,8 +221,6 @@ public class TripDAOTest {
         assertFalse(results.isEmpty());
     }
 
-    // ========== Tests UTILITIES ==========
-
     @Test
     public void testTripExists() {
         Trip saved = entityManager.persistAndFlush(testTrip);
@@ -253,8 +234,6 @@ public class TripDAOTest {
         long count = tripDAO.count();
         assertTrue(count >= 1);
     }
-
-    // ========== Tests PAGEABLE ==========
 
     @Test
     public void testGetTripsByCategoryPageable() {
@@ -348,7 +327,6 @@ public class TripDAOTest {
 
     @Test
     public void testGetTripsByCreatorPageableEmpty() {
-        // Membre sans sortie
         Member otherMember = new Member();
         otherMember.setLastName("Autre");
         otherMember.setFirstName("Membre");
@@ -361,4 +339,3 @@ public class TripDAOTest {
         assertTrue(page.getContent().isEmpty());
     }
 }
-

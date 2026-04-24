@@ -17,9 +17,6 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/**
- * Tests JUnit pour le service MemberService.
- */
 @DataJpaTest
 @Import({MemberDAOImpl.class, MemberService.class})
 public class MemberServiceTest {

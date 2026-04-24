@@ -17,9 +17,6 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/**
- * Tests JUnit pour le service CategoryService.
- */
 @DataJpaTest
 @Import({CategoryDAOImpl.class, CategoryService.class})
 public class CategoryServiceTest {
