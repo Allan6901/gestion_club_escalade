@@ -146,6 +146,23 @@ public class WebController {
         return "search";
     }
 
+    @GetMapping("/member/{id}/trips")
+    public String memberTrips(@PathVariable Long id,
+                              @RequestParam(defaultValue = "0") int page,
+                              Model model) {
+        Optional<Member> memberOpt = memberService.getMemberById(id);
+        if (memberOpt.isEmpty()) return "redirect:/categories";
+
+        Member member = memberOpt.get();
+        Page<Trip> tripPage = tripService.getTripsByCreatorPageable(id, PageRequest.of(page, PAGE_SIZE));
+        model.addAttribute("member", member);
+        model.addAttribute("trips", tripPage.getContent());
+        model.addAttribute("currentPage", tripPage.getNumber());
+        model.addAttribute("totalPages", tripPage.getTotalPages());
+        model.addAttribute("totalElements", tripPage.getTotalElements());
+        return "member_trips";
+    }
+
     @GetMapping("/login")
     public String login() {
         return "login";

@@ -28,7 +28,7 @@
                         <a href="${trip.website}" target="_blank">${trip.website}</a>
                     </p>
                     <p><strong>Créateur :</strong>
-                        <a href="/trips/search?memberId=${trip.creator.id}">
+                        <a href="/member/${trip.creator.id}/trips">
                             ${trip.creator.firstName} ${trip.creator.lastName}
                         </a>
                         (<a href="mailto:${trip.creator.email}">${trip.creator.email}</a>)
